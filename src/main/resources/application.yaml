@@ -8,6 +8,16 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       bootstrap-servers: localhost:9092
+#      acks: all # Ensure all replicas acknowledge
+#      acks: 0 # No acknowledgments
+      acks: 1 # Ensure leader acknowledges
+      retries: 3 # Number of retries on failure, default value is 2147483647
+      properties:
+        retry-back: 1000 # Time to wait before retrying, default is 100
+        delivery.timeout.ms: 120000 # default max time a producer can spend trying to deliver a message
+        lingered.ms: 5 # default is 0, time to wait and buffer data before sending batch messages
+        request.timeout.ms: 30000 # default is 30000, time to wait for a response from the broker
+        # delivery.timeout.ms >= lingered.ms + request.timeout.ms
 
 server:
   port: 8081
