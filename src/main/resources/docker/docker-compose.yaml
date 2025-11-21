@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # --- Single Kafka Broker ---
+  kafka-1:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-1
+    ports:
+      - "9092:9092" # External access on 9092
+    environment:
+      CLUSTER_ID: "WnLkTHhkQaiJbwP8FClPhw"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Only one voter: the instance itself
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9091
+      # Internal (9090), Controller (9091), External (9092)
+      KAFKA_LISTENERS: PLAINTEXT://:9090,CONTROLLER://:9091,EXTERNAL://:9092
+      # Advertised listeners for clients (Internal and External)
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9090, EXTERNAL://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # ACL Authorizer settings (carried over for permissions)
+      KAFKA_AUTHORIZER_CLASS_NAME: "org.apache.kafka.metadata.authorizer.StandardAuthorizer"
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_RAFT_ELECTION_TIMEOUT_MS: 1000
+      KAFKA_RAFT_VOTE_TIMEOUT_MS: 1000
+      KAFKA_CONTROLLER_QUORUM_FETCH_TIMEOUT_MS: 1000
+      KAFKA_METADATA_MAX_AGE_MS: 5000
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1  # 👈 ADD THIS LINE
+      KAFKA_NUM_REPLICAS: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      # Use a single volume for persistence
+      - ./volumes/kafka-1-data:/var/lib/kafka/data
+    networks:
+      - kafka-net
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka-1:9090", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # --- Kafka UI Service ---
+  kafka-ui-2:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-2
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: 'Single Kafka KRaft Node'
+      # Update to only use the single broker instance
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9090
+      KAFKA_CLUSTERS_0_READONLY: 'false'
+    networks:
+      - kafka-net
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+
+networks:
+  kafka-net:
+    driver: bridge
