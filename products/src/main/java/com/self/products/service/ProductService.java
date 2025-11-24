@@ -1,6 +1,6 @@
 package com.self.products.service;
 
-import com.self.products.dto.ProductCreateEvent;
+import com.self.core.dto.ProductCreateEvent;
 import com.self.products.model.Product;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,5 @@
 package com.self.products.config;
 
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.self.core.dto.ProductCreateEvent;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -12,6 +11,7 @@ import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.Map;
 
@@ -53,7 +53,7 @@ public class KafkaConfig {
                 ProducerConfig.ACKS_CONFIG, acks,
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CustomSerializer.class,
                 ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeoutMs,
                 ProducerConfig.LINGER_MS_CONFIG, lingerMs,
                 ProducerConfig.RETRIES_CONFIG, retries,
