@@ -1,7 +1,7 @@
-package com.self.kafkademo.service;
+package com.self.products.service;
 
-import com.self.kafkademo.dto.ProductCreateEvent;
-import com.self.kafkademo.model.Product;
+import com.self.products.dto.ProductCreateEvent;
+import com.self.products.model.Product;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-import static com.self.kafkademo.constants.KafkaConstants.PRODUCT_CREATE_TOPIC;
+import static com.self.products.constants.KafkaConstants.PRODUCT_CREATE_TOPIC;
 
 @Service
 @RequiredArgsConstructor

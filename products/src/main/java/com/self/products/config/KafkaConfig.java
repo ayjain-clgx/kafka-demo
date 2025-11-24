@@ -1,7 +1,7 @@
-package com.self.kafkademo.config;
+package com.self.products.config;
 
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.self.kafkademo.dto.ProductCreateEvent;
+import com.self.core.dto.ProductCreateEvent;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -15,7 +15,7 @@ import org.springframework.kafka.core.ProducerFactory;
 
 import java.util.Map;
 
-import static com.self.kafkademo.constants.KafkaConstants.PRODUCT_CREATE_TOPIC;
+import static com.self.products.constants.KafkaConstants.PRODUCT_CREATE_TOPIC;
 
 @Configuration
 public class KafkaConfig {

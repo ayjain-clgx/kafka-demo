@@ -1,4 +1,4 @@
-package com.self.kafkademo.constants;
+package com.self.products.constants;
 
 public class KafkaConstants {
 

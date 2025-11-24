@@ -1,4 +1,4 @@
-package com.self.kafkademo.dto;
+package com.self.core.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

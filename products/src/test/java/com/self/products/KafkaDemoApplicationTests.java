@@ -1,4 +1,4 @@
-package com.self.kafkademo;
+package com.self.products;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
