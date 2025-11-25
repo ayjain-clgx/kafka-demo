@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import com.self.core.dto.ProductCreateEvent;
 
 @Component
-@KafkaListener(topics = "product-created-events-topic")
+@KafkaListener(topics = "product-created-events-topic", containerFactory = "kafkaListenerContainerFactory")
 @Slf4j
 public class ProductCreateEventHandler {
 
