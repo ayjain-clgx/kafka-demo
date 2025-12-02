@@ -4,6 +4,7 @@ import com.self.core.dto.ProductCreateEvent;
 import com.self.products.model.Product;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,13 @@ public class ProductService {
     public Product addProduct(Product product) {
         var id = UUID.randomUUID().toString();
         var productEvent = new ProductCreateEvent(id, product.getName());
-        var responseFuture = kafkaTemplate.send(PRODUCT_CREATE_TOPIC, productEvent);
+        ProducerRecord<String, ProductCreateEvent> producerRecord = new ProducerRecord<>(
+                PRODUCT_CREATE_TOPIC,
+                id,
+                productEvent);
+        producerRecord.headers().add("messageId", UUID.randomUUID().toString().getBytes());
+        var responseFuture = kafkaTemplate.send(producerRecord);
+//        var responseFuture = kafkaTemplate.send(PRODUCT_CREATE_TOPIC, productEvent);
         responseFuture.whenComplete((resp, e) -> {
             if (e != null) {
                 log.error("Failed to send message: {}", e.getMessage());
