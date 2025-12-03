@@ -2,6 +2,16 @@ server:
   port: 8082
 
 spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
   kafka:
     consumer:
 #      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
