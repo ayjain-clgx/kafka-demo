@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import com.self.transfers.error.TransferServiceException;
@@ -29,6 +30,22 @@ public class TransferServiceImpl implements TransferService {
 		this.restTemplate = restTemplate;
 	}
 
+    /**
+     * And the reason you can use this annotation for Kafka transaction is because there is a very good integration between Spring Framework and Apache Kafka.
+     * To work with Kafka transactions, spring framework will use object that is called Kafka Transaction Manager,
+     * and we created an instance of this object in previous video lesson.
+     * If you have only one transaction manager object, Spring Framework will find it and will use it to manage Kafka transactions.
+     * But if you have multiple different transaction managers in your application, then you can tell this annotation which specific transaction manager to use for this method.
+     * And to do that you will add value property and as a value you will provide the name of Transaction Manager.
+     * <p>
+     * So when you annotate this method with transactional annotation, then when the method is called Spring Framework will start a new transaction.
+     * It will then execute all operations in this method as a single unit of work. And if everything goes smoothly and if there are no errors,
+     * then spring will commit transaction and consumer microservices will receive Kafka messages.
+     * But if there is an error, like for example, a call to a remote service can fail, then Spring framework will roll back transaction Kafka messages that were sent.
+     * They will not be committed. And our consumer microservices, they will not receive these messages.
+     * Provided that we configured those consumer microservices to read only committed messages.
+     */
+    @Transactional(value = "kafkaTransactionManager")
 	@Override
 	public boolean transfer(TransferRestModel transferRestModel) {
 		WithdrawalRequestedEvent withdrawalEvent = new WithdrawalRequestedEvent(transferRestModel.getSenderId(),
