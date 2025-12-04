@@ -15,6 +15,8 @@ import org.springframework.web.client.RestTemplate;
 import com.self.transfers.error.TransferServiceException;
 import com.self.transfers.model.TransferRestModel;
 
+import java.net.ConnectException;
+
 @Service
 @Slf4j
 public class TransferServiceImpl implements TransferService {
@@ -44,8 +46,13 @@ public class TransferServiceImpl implements TransferService {
      * But if there is an error, like for example, a call to a remote service can fail, then Spring framework will roll back transaction Kafka messages that were sent.
      * They will not be committed. And our consumer microservices, they will not receive these messages.
      * Provided that we configured those consumer microservices to read only committed messages.
+     *
+     * By default, transactional annotation does not roll back transaction. By default, it rolls back transaction for unchecked (runtime) exceptions and for errors.
+     * But it does not roll back transaction on checked exceptions and checked exceptions are the ones that you need to declare and handle in your method,
+     * but it is actually configurable.
+     * You can configure transactional annotation to roll back transaction for specific exception using rollback for attribute.
      */
-    @Transactional(value = "kafkaTransactionManager")
+    @Transactional(value = "kafkaTransactionManager", rollbackFor = {TransferServiceException.class, ConnectException.class})
 	@Override
 	public boolean transfer(TransferRestModel transferRestModel) {
 		WithdrawalRequestedEvent withdrawalEvent = new WithdrawalRequestedEvent(transferRestModel.getSenderId(),
