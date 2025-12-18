@@ -1,4 +1,4 @@
-package com.self.transfers;
+package com.self.transfers.config;
 
 import java.util.HashMap;
 import java.util.Map;

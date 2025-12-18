@@ -2,7 +2,14 @@ package com.self.transfers.service;
 
 import com.self.core.payments.ws.core.events.DepositRequestedEvent;
 import com.self.core.payments.ws.core.events.WithdrawalRequestedEvent;
+import com.self.transfers.entity.TransferEntity;
+import com.self.transfers.repository.TransferRepository;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -21,21 +28,28 @@ import java.net.ConnectException;
 @Slf4j
 public class TransferServiceImpl implements TransferService {
 
-	private KafkaTemplate<String, Object> kafkaTemplate;
-	private Environment environment;
-	private RestTemplate restTemplate;
+    @Value("${withdraw-money-topic}")
+    private String withdrawMoneyTopic;
 
-	public TransferServiceImpl(KafkaTemplate<String, Object> kafkaTemplate, Environment environment,
-			RestTemplate restTemplate) {
-		this.kafkaTemplate = kafkaTemplate;
-		this.environment = environment;
-		this.restTemplate = restTemplate;
-	}
+    @Value("${deposit-money-topic}")
+    private String depositMoneyTopic;
+
+	private KafkaTemplate<String, Object> kafkaTemplate;
+	private RestTemplate restTemplate;
+    private TransferRepository transferRepository;
+
+    @Autowired
+    public TransferServiceImpl(KafkaTemplate<String, Object> kafkaTemplate,
+                               RestTemplate restTemplate,
+                               TransferRepository transferRepository) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.restTemplate = restTemplate;
+        this.transferRepository = transferRepository;
+    }
 
     /**
      * And the reason you can use this annotation for Kafka transaction is because there is a very good integration between Spring Framework and Apache Kafka.
-     * To work with Kafka transactions, spring framework will use object that is called Kafka Transaction Manager,
-     * and we created an instance of this object in previous video lesson.
+     * To work with Kafka transactions, spring framework will use object that is called Kafka Transaction Manager.
      * If you have only one transaction manager object, Spring Framework will find it and will use it to manage Kafka transactions.
      * But if you have multiple different transaction managers in your application, then you can tell this annotation which specific transaction manager to use for this method.
      * And to do that you will add value property and as a value you will provide the name of Transaction Manager.
@@ -61,14 +75,13 @@ public class TransferServiceImpl implements TransferService {
 				transferRestModel.getRecepientId(), transferRestModel.getAmount());
 
 		try {
-			kafkaTemplate.send(environment.getProperty("withdraw-money-topic", "withdraw-money-topic"),
-					withdrawalEvent);
+			kafkaTemplate.send(withdrawMoneyTopic, withdrawalEvent);
 			log.info("Sent event to withdrawal topic.");
 
 			// Business logic that causes and error
 			callRemoteServce();
 
-			kafkaTemplate.send(environment.getProperty("deposit-money-topic", "deposit-money-topic"), depositEvent);
+			kafkaTemplate.send(depositMoneyTopic, depositEvent);
 			log.info("Sent event to deposit topic");
 
 		} catch (Exception ex) {
@@ -78,6 +91,40 @@ public class TransferServiceImpl implements TransferService {
 
 		return true;
 	}
+
+    @Transactional(value = "transactionManager")
+    @Override
+    public boolean transferWithDatabaseOperation(TransferRestModel transferRestModel) {
+        WithdrawalRequestedEvent withdrawalEvent = new WithdrawalRequestedEvent(transferRestModel.getSenderId(),
+                transferRestModel.getRecepientId(), transferRestModel.getAmount());
+        DepositRequestedEvent depositEvent = new DepositRequestedEvent(transferRestModel.getSenderId(),
+                transferRestModel.getRecepientId(), transferRestModel.getAmount());
+
+        try {
+            //save to db
+            TransferEntity transferEntity = new TransferEntity();
+            transferEntity.setAmount(transferRestModel.getAmount());
+            transferEntity.setSenderId(transferRestModel.getSenderId());
+            transferEntity.setRecepientId(transferRestModel.getRecepientId());
+            transferRepository.save(transferEntity);
+
+            //send to kafka
+            kafkaTemplate.send(withdrawMoneyTopic, withdrawalEvent);
+            log.info("Sent event to withdrawal topic.");
+
+            // Business logic that causes and error
+            callRemoteServce();
+
+            kafkaTemplate.send(depositMoneyTopic, depositEvent);
+            log.info("Sent event to deposit topic");
+
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            throw new TransferServiceException(ex);
+        }
+
+        return true;
+    }
 
 	private ResponseEntity<String> callRemoteServce() throws Exception {
 		String requestUrl = "http://localhost:8082/response/200";
