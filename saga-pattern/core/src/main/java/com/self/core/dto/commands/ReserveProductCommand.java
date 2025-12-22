@@ -1,19 +1,16 @@
-package com.self.core.dto.events;
+package com.self.core.dto.commands;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 import java.util.UUID;
 
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
-@ToString
-public class OrderCreatedEvent {
+@AllArgsConstructor
+@Data
+public class ReserveProductCommand {
     private UUID orderId;
-    private UUID customerId;
     private UUID productId;
     private Integer productQuantity;
 }
