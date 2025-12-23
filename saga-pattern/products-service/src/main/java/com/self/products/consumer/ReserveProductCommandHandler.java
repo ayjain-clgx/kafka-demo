@@ -2,6 +2,8 @@ package com.self.products.consumer;
 
 import com.self.core.dto.Product;
 import com.self.core.dto.commands.ReserveProductCommand;
+import com.self.core.dto.events.ProductReservedEvent;
+import com.self.core.dto.events.ProductReservedFailedEvent;
 import com.self.core.types.OrderStatus;
 import com.self.products.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -22,19 +24,33 @@ public class ReserveProductCommandHandler {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ProductService productService;
 
-    @Value("${products.commands.topic.name}")
-    private String productsCommandsTopicName;
+    @Value("${products.event.topic.name}")
+    private String productsEventTopicName;
 
     @KafkaHandler
     public void handleOrderEvents(@Payload ReserveProductCommand event) {
         log.info("Received event: {}", event);
         try {
-            var desriedProduct = new Product(event.getOrderId(), event.getProductQuantity());
-            productService.reserve(desriedProduct, event.getOrderId());
-            
+            var desriedProduct = new Product(event.getProductId(), event.getProductQuantity());
+            var reservedProduct = productService.reserve(desriedProduct, event.getOrderId());
+
+            var productReservedEvent = new ProductReservedEvent(
+                    event.getProductId(),
+                    event.getOrderId(),
+                    reservedProduct.getPrice(),
+                    event.getProductQuantity()
+            );
+
+            kafkaTemplate.send(productsEventTopicName, productReservedEvent);
         }
         catch (Exception e) {
             log.error("Error processing order event: {}", e.getLocalizedMessage());
+            var productReservedFailedEvent = new ProductReservedFailedEvent(
+                    event.getOrderId(),
+                    event.getProductId(),
+                    event.getProductQuantity()
+            );
+            kafkaTemplate.send(productsEventTopicName, productReservedFailedEvent);
         }
     }
 }
