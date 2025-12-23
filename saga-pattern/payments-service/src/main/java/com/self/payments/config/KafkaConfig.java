@@ -11,8 +11,19 @@ import org.springframework.kafka.core.ProducerFactory;
 @Configuration
 public class KafkaConfig {
 
+    @Value("${payments.events.topic.name}")
+    private String paymentsEventsTopicName;
+
     @Bean
     KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
+    NewTopic paymentsEventsTopic() {
+        return TopicBuilder.name(paymentsEventsTopicName)
+                .partitions(3)
+                .replicas(3)
+                .build();
     }
 }
