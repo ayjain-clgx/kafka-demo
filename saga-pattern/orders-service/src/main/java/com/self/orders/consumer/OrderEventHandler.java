@@ -3,6 +3,7 @@ package com.self.orders.consumer;
 import com.self.core.dto.commands.ProcessPaymentCommand;
 import com.self.core.dto.commands.ReserveProductCommand;
 import com.self.core.dto.events.OrderCreatedEvent;
+import com.self.core.dto.events.PaymentProcessedEvent;
 import com.self.core.dto.events.ProductReservedEvent;
 import com.self.core.types.OrderStatus;
 import com.self.orders.service.OrderHistoryService;
@@ -16,7 +17,11 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 @Component
-@KafkaListener(topics = {"${order.events.topic.name}", "${products.event.topic.name}"}, groupId = "${spring.kafka.consumer.group-id}")
+@KafkaListener(topics = {
+        "${order.events.topic.name}",
+        "${products.event.topic.name}",
+        "${payments.events.topic.name}"
+    }, groupId = "${spring.kafka.consumer.group-id}")
 @RequiredArgsConstructor
 @Slf4j
 public class OrderEventHandler {
@@ -49,6 +54,13 @@ public class OrderEventHandler {
                 );
 
         kafkaTemplate.send(paymentsCommandsTopicName, paymentCommand);
+
+    }
+
+    @KafkaHandler
+    public void handlePaymentEvents(@Payload PaymentProcessedEvent paymentProcessedEvent) {
+        log.info("Payment processed for order: {}", paymentProcessedEvent.getOrderId());
+
 
     }
 }
