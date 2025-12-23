@@ -20,6 +20,9 @@ public class KafkaConfig {
     @Value("${payments.commands.topic.name}")
     private String paymentsCommandsTopicName;
 
+    @Value("${approve.order.commands.topic.name}")
+    private  String approveOrderCommandsTopicName;
+
     @Bean
     NewTopic orderEventsTopic() {
         return TopicBuilder.name(orderEventsTopicName)
@@ -44,6 +47,14 @@ public class KafkaConfig {
     @Bean
     NewTopic paymentsCommandTopic() {
         return TopicBuilder.name(paymentsCommandsTopicName)
+                .replicas(3)
+                .partitions(3)
+                .build();
+    }
+
+    @Bean
+    NewTopic approveOrderCommandsTopic() {
+        return TopicBuilder.name(approveOrderCommandsTopicName)
                 .replicas(3)
                 .partitions(3)
                 .build();

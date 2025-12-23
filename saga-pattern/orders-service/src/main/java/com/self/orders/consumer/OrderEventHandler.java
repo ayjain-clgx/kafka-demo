@@ -1,5 +1,6 @@
 package com.self.orders.consumer;
 
+import com.self.core.dto.commands.ApproveOrderCommands;
 import com.self.core.dto.commands.ProcessPaymentCommand;
 import com.self.core.dto.commands.ReserveProductCommand;
 import com.self.core.dto.events.OrderCreatedEvent;
@@ -35,6 +36,9 @@ public class OrderEventHandler {
     @Value("${payments.commands.topic.name}")
     private String paymentsCommandsTopicName;
 
+    @Value("${approve.order.commands.topic.name}")
+    private String approveOrderCommandsTopicName;
+
     @KafkaHandler
     public void handleOrderEvents(@Payload OrderCreatedEvent event) {
         log.info("Received event: {}", event);
@@ -60,7 +64,8 @@ public class OrderEventHandler {
     @KafkaHandler
     public void handlePaymentEvents(@Payload PaymentProcessedEvent paymentProcessedEvent) {
         log.info("Payment processed for order: {}", paymentProcessedEvent.getOrderId());
+        var approveOrderCommand = new ApproveOrderCommands(paymentProcessedEvent.getOrderId());
 
-
+        kafkaTemplate.send(approveOrderCommandsTopicName, approveOrderCommand);
     }
 }
