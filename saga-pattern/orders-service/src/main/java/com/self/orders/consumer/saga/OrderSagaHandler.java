@@ -1,8 +1,9 @@
-package com.self.orders.consumer;
+package com.self.orders.consumer.saga;
 
 import com.self.core.dto.commands.ApproveOrderCommands;
 import com.self.core.dto.commands.ProcessPaymentCommand;
 import com.self.core.dto.commands.ReserveProductCommand;
+import com.self.core.dto.events.OrderApprovedEvent;
 import com.self.core.dto.events.OrderCreatedEvent;
 import com.self.core.dto.events.PaymentProcessedEvent;
 import com.self.core.dto.events.ProductReservedEvent;
@@ -25,7 +26,7 @@ import org.springframework.stereotype.Component;
     }, groupId = "${spring.kafka.consumer.group-id}")
 @RequiredArgsConstructor
 @Slf4j
-public class OrderEventHandler {
+public class OrderSagaHandler {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final OrderHistoryService orderHistoryService;
@@ -67,5 +68,11 @@ public class OrderEventHandler {
         var approveOrderCommand = new ApproveOrderCommands(paymentProcessedEvent.getOrderId());
 
         kafkaTemplate.send(approveOrderCommandsTopicName, approveOrderCommand);
+    }
+
+    @KafkaHandler
+    public void handleOrderApprovedEvents(@Payload OrderApprovedEvent orderApprovedEvent) {
+        log.info("Order approved: {}", orderApprovedEvent.getOrderId());
+        orderHistoryService.add(orderApprovedEvent.getOrderId(), OrderStatus.APPROVED);
     }
 }

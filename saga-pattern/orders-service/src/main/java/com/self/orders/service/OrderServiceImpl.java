@@ -1,6 +1,7 @@
 package com.self.orders.service;
 
 import com.self.core.dto.Order;
+import com.self.core.dto.events.OrderApprovedEvent;
 import com.self.core.dto.events.OrderCreatedEvent;
 import com.self.core.types.OrderStatus;
 import com.self.orders.dao.jpa.entity.OrderEntity;
@@ -9,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +46,17 @@ public class OrderServiceImpl implements OrderService {
                 entity.getProductId(),
                 entity.getProductQuantity(),
                 entity.getStatus());
+    }
+
+    @Override
+    public void approveOrder(UUID orderId) {
+        var orderEntity = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+        orderEntity.setStatus(OrderStatus.APPROVED);
+        orderRepository.save(orderEntity);
+
+        var orderApprovedEvent = new OrderApprovedEvent(orderEntity.getId());
+        kafkaTemplate.send(orderEventsTopicName, orderApprovedEvent);
     }
 
 }
