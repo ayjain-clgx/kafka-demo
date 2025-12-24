@@ -3,6 +3,7 @@ package com.self.orders.service;
 import com.self.core.dto.Order;
 import com.self.core.dto.events.OrderApprovedEvent;
 import com.self.core.dto.events.OrderCreatedEvent;
+import com.self.core.dto.events.OrderRejectEvent;
 import com.self.core.types.OrderStatus;
 import com.self.orders.dao.jpa.entity.OrderEntity;
 import com.self.orders.dao.jpa.repository.OrderRepository;
@@ -57,6 +58,17 @@ public class OrderServiceImpl implements OrderService {
 
         var orderApprovedEvent = new OrderApprovedEvent(orderEntity.getId());
         kafkaTemplate.send(orderEventsTopicName, orderApprovedEvent);
+    }
+
+    @Override
+    public void rejectOrder(UUID orderId) {
+        var orderEntity = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+        orderEntity.setStatus(OrderStatus.REJECTED);
+        orderRepository.save(orderEntity);
+
+        var orderRejectEvent = new OrderRejectEvent(orderEntity.getId());
+        kafkaTemplate.send(orderEventsTopicName, orderRejectEvent);
     }
 
 }

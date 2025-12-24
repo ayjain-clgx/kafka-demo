@@ -81,4 +81,20 @@ public class OrderSagaHandler {
         log.info("Order approved: {}", orderApprovedEvent.getOrderId());
         orderHistoryService.add(orderApprovedEvent.getOrderId(), OrderStatus.APPROVED);
     }
+
+    @KafkaHandler
+    public void handleProductReservationCancellationEvents(@Payload ProductCancelReservedEvent productCancelReservedEvent) {
+        log.info("Product reservation cancelled for order: {}", productCancelReservedEvent.getOrderId());
+        var rejectOrderCommand = new RejectOrderCommand(productCancelReservedEvent.getOrderId());
+
+        kafkaTemplate.send(orderCommandsTopicName, rejectOrderCommand);
+
+    }
+
+    @KafkaHandler
+    public void handleRejectOrderEvent(@Payload OrderRejectEvent orderRejectEvent) {
+        log.info("Order rejected: {}", orderRejectEvent.getOrderId());
+
+        orderHistoryService.add(orderRejectEvent.getOrderId(), OrderStatus.REJECTED);
+    }
 }

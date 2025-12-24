@@ -1,6 +1,7 @@
 package com.self.orders.consumer.handler;
 
 import com.self.core.dto.commands.ApproveOrderCommands;
+import com.self.core.dto.commands.RejectOrderCommand;
 import com.self.orders.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,5 +25,12 @@ public class OrderEventHandler {
         log.info("Received approve order command event: {}", approveOrderCommands);
 
         orderService.approveOrder(approveOrderCommands.getOrderId());
+    }
+
+    @KafkaHandler
+    public void handleRejectOrderCommandEvent(@Payload RejectOrderCommand rejectOrderCommand) {
+        log.info("Received reject order command event: {}", rejectOrderCommand);
+
+        orderService.rejectOrder(rejectOrderCommand.getOrderId());
     }
 }
