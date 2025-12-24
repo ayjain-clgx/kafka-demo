@@ -1,7 +1,9 @@
 package com.self.products.consumer;
 
 import com.self.core.dto.Product;
+import com.self.core.dto.commands.CancelReserveProductCommand;
 import com.self.core.dto.commands.ReserveProductCommand;
+import com.self.core.dto.events.ProductCancelReservedEvent;
 import com.self.core.dto.events.ProductReservedEvent;
 import com.self.core.dto.events.ProductReservedFailedEvent;
 import com.self.core.types.OrderStatus;
@@ -51,6 +53,26 @@ public class ReserveProductCommandHandler {
                     event.getProductQuantity()
             );
             kafkaTemplate.send(productsEventTopicName, productReservedFailedEvent);
+        }
+    }
+
+    @KafkaHandler
+    public void handleCancelOrderEvents(@Payload CancelReserveProductCommand event) {
+        log.info("Received cancel reserve event: {}", event);
+        try {
+            var desriedProduct = new Product(event.getProductId(), event.getProductQuantity());
+            productService.cancelReservation(desriedProduct, event.getOrderId());
+
+            var productReservedCancelEvent = new ProductCancelReservedEvent(
+                    event.getProductId(),
+                    event.getOrderId(),
+                    event.getProductQuantity()
+            );
+
+            kafkaTemplate.send(productsEventTopicName, productReservedCancelEvent);
+        }
+        catch (Exception e) {
+            log.error("Error processing order reservation cancellation event: {}", e.getLocalizedMessage());
         }
     }
 }

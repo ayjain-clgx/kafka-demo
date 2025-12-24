@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @KafkaListener(topics = {
-        "${approve.order.commands.topic.name}"
+        "${order.commands.topic.name}"
 }, groupId = "${spring.kafka.consumer.group-id}")
 @RequiredArgsConstructor
 @Slf4j

@@ -20,7 +20,7 @@ public class KafkaConfig {
     @Value("${payments.commands.topic.name}")
     private String paymentsCommandsTopicName;
 
-    @Value("${approve.order.commands.topic.name}")
+    @Value("${order.commands.topic.name}")
     private  String approveOrderCommandsTopicName;
 
     @Bean

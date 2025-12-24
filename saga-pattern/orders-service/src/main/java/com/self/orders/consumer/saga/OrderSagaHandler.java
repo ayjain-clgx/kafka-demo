@@ -1,12 +1,7 @@
 package com.self.orders.consumer.saga;
 
-import com.self.core.dto.commands.ApproveOrderCommands;
-import com.self.core.dto.commands.ProcessPaymentCommand;
-import com.self.core.dto.commands.ReserveProductCommand;
-import com.self.core.dto.events.OrderApprovedEvent;
-import com.self.core.dto.events.OrderCreatedEvent;
-import com.self.core.dto.events.PaymentProcessedEvent;
-import com.self.core.dto.events.ProductReservedEvent;
+import com.self.core.dto.commands.*;
+import com.self.core.dto.events.*;
 import com.self.core.types.OrderStatus;
 import com.self.orders.service.OrderHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +32,8 @@ public class OrderSagaHandler {
     @Value("${payments.commands.topic.name}")
     private String paymentsCommandsTopicName;
 
-    @Value("${approve.order.commands.topic.name}")
-    private String approveOrderCommandsTopicName;
+    @Value("${order.commands.topic.name}")
+    private String orderCommandsTopicName;
 
     @KafkaHandler
     public void handleOrderEvents(@Payload OrderCreatedEvent event) {
@@ -67,7 +62,18 @@ public class OrderSagaHandler {
         log.info("Payment processed for order: {}", paymentProcessedEvent.getOrderId());
         var approveOrderCommand = new ApproveOrderCommands(paymentProcessedEvent.getOrderId());
 
-        kafkaTemplate.send(approveOrderCommandsTopicName, approveOrderCommand);
+        kafkaTemplate.send(orderCommandsTopicName, approveOrderCommand);
+    }
+
+    @KafkaHandler
+    public void handlePaymentFailedEvents(@Payload PaymentFailedEvent paymentFailedEvent) {
+        log.info("Payment failed for order: {}", paymentFailedEvent.getOrderId());
+        var rejectOrderCommand = new CancelReserveProductCommand(
+                paymentFailedEvent.getOrderId(),
+                paymentFailedEvent.getProductId(),
+                paymentFailedEvent.getProductQuantity());
+
+        kafkaTemplate.send(productsCommandsTopicName, rejectOrderCommand);
     }
 
     @KafkaHandler
